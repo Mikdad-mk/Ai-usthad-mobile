@@ -25,43 +25,55 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let mounted = true;
+
     // Check active session
+    const checkUser = async () => {
+      try {
+        const currentUser = await getCurrentUser();
+        if (mounted) {
+          if (currentUser) {
+            setUser(currentUser);
+            const userProfile = await getUserProfile(currentUser.id);
+            if (mounted) {
+              setProfile(userProfile);
+            }
+          }
+          setLoading(false);
+        }
+      } catch (error) {
+        console.error("Error checking user:", error);
+        if (mounted) {
+          setLoading(false);
+        }
+      }
+    };
+
     checkUser();
 
     // Listen for auth changes
     const { data: authListener } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        if (!mounted) return;
+
         if (session?.user) {
           setUser(session.user);
           const userProfile = await getUserProfile(session.user.id);
-          setProfile(userProfile);
+          if (mounted) {
+            setProfile(userProfile);
+          }
         } else {
           setUser(null);
           setProfile(null);
         }
-        setLoading(false);
       }
     );
 
     return () => {
+      mounted = false;
       authListener.subscription.unsubscribe();
     };
   }, []);
-
-  const checkUser = async () => {
-    try {
-      const currentUser = await getCurrentUser();
-      if (currentUser) {
-        setUser(currentUser);
-        const userProfile = await getUserProfile(currentUser.id);
-        setProfile(userProfile);
-      }
-    } catch (error) {
-      console.error("Error checking user:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const signOut = async () => {
     await supabase.auth.signOut();

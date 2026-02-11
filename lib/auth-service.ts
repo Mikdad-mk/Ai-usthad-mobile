@@ -1,4 +1,8 @@
 import { supabase } from "./supabase";
+import * as WebBrowser from "expo-web-browser";
+import * as Linking from "expo-linking";
+
+WebBrowser.maybeCompleteAuthSession();
 
 export interface UserProfile {
   id: string;
@@ -222,4 +226,77 @@ export async function getUserProfile(
     created_at: profile.created_at,
     avatar_url: profile.avatar_url,
   };
+}
+
+export async function signInWithGoogle() {
+  try {
+    const redirectUrl = Linking.createURL("/");
+    
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: redirectUrl,
+        skipBrowserRedirect: false,
+      },
+    });
+
+    if (error) throw error;
+
+    if (data?.url) {
+      const result = await WebBrowser.openAuthSessionAsync(
+        data.url,
+        redirectUrl
+      );
+
+      if (result.type === "success") {
+        const url = result.url;
+        const params = new URL(url).searchParams;
+        const accessToken = params.get("access_token");
+        const refreshToken = params.get("refresh_token");
+
+        if (accessToken && refreshToken) {
+          const { data: sessionData, error: sessionError } =
+            await supabase.auth.setSession({
+              access_token: accessToken,
+              refresh_token: refreshToken,
+            });
+
+          if (sessionError) throw sessionError;
+
+          if (sessionData.user) {
+            // Check if profile exists, create if not
+            const { data: existingProfile } = await supabase
+              .from("user_profiles")
+              .select("*")
+              .eq("id", sessionData.user.id)
+              .maybeSingle();
+
+            if (!existingProfile) {
+              const fullName =
+                sessionData.user.user_metadata?.full_name ||
+                sessionData.user.email?.split("@")[0] ||
+                "User";
+              const role =
+                sessionData.user.email === ADMIN_EMAIL ? "admin" : "user";
+
+              await supabase.from("user_profiles").insert({
+                id: sessionData.user.id,
+                email: sessionData.user.email || "",
+                full_name: fullName,
+                avatar_url: sessionData.user.user_metadata?.avatar_url || null,
+                role: role,
+              });
+            }
+
+            return sessionData.user;
+          }
+        }
+      }
+    }
+
+    throw new Error("Failed to complete Google sign-in");
+  } catch (error) {
+    console.error("Google sign-in error:", error);
+    throw error;
+  }
 }

@@ -18,5 +18,10 @@ export default {
     },
     plugins: ["expo-router"],
     scheme: "aiustad",
+    extra: {
+      eas: {
+        projectId: "1ad440d8-9a7c-4a67-9d9a-de199de881a2",
+      },
+    },
   },
 };

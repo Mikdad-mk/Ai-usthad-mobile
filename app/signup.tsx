@@ -1,7 +1,7 @@
 import { View, Text, TextInput, TouchableOpacity, Image, KeyboardAvoidingView, Platform, ScrollView, Alert, ActivityIndicator } from "react-native";
 import { useRouter } from "expo-router";
 import { useState } from "react";
-import { signUpUser } from "../lib/auth-service";
+import { signUpUser, signInWithGoogle } from "../lib/auth-service";
 
 export default function SignupPage() {
   const router = useRouter();
@@ -9,6 +9,7 @@ export default function SignupPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
 
   const handleSignup = async () => {
     if (!name || !email || !password) {
@@ -31,6 +32,18 @@ export default function SignupPage() {
       Alert.alert("Signup Failed", error.message || "Could not create account");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    setGoogleLoading(true);
+    try {
+      await signInWithGoogle();
+      router.replace("/chats");
+    } catch (error: any) {
+      Alert.alert("Google Sign-In Failed", error.message || "Could not sign in with Google");
+    } finally {
+      setGoogleLoading(false);
     }
   };
 
@@ -95,13 +108,36 @@ export default function SignupPage() {
         {/* Sign Up Button */}
         <TouchableOpacity
           onPress={handleSignup}
-          disabled={loading}
+          disabled={loading || googleLoading}
           className="bg-amber-600 rounded-full py-4 px-8 mb-4"
         >
           {loading ? (
             <ActivityIndicator color="#fff" />
           ) : (
             <Text className="text-white text-center font-bold text-base">Create Account</Text>
+          )}
+        </TouchableOpacity>
+
+        {/* Divider */}
+        <View className="flex-row items-center mb-4">
+          <View className="flex-1 h-px bg-slate-200" />
+          <Text className="mx-4 text-slate-500 text-sm">or</Text>
+          <View className="flex-1 h-px bg-slate-200" />
+        </View>
+
+        {/* Google Sign In Button */}
+        <TouchableOpacity
+          onPress={handleGoogleSignIn}
+          disabled={loading || googleLoading}
+          className="bg-white border border-slate-200 rounded-full py-4 px-8 mb-4 flex-row items-center justify-center"
+        >
+          {googleLoading ? (
+            <ActivityIndicator color="#d97706" />
+          ) : (
+            <>
+              <Text className="text-2xl mr-2">🔍</Text>
+              <Text className="text-slate-700 font-semibold text-base">Continue with Google</Text>
+            </>
           )}
         </TouchableOpacity>
 

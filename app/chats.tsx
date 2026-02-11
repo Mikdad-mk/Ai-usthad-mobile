@@ -24,23 +24,27 @@ export default function ChatsPage() {
     try {
       const sessions = await getChatSessions(user.id);
       
-      // Filter out chats with "New Chat" title (empty chats)
+      // Filter out chats with "New Chat" title (empty chats) - do this quickly
       const nonEmptyChats = sessions.filter(chat => chat.title !== "New Chat");
       
+      // Show chats immediately
       setChats(nonEmptyChats);
+      setLoading(false);
       
-      // Optionally delete the empty chats from database
+      // Delete empty chats in background (don't wait for this)
       const emptyChats = sessions.filter(chat => chat.title === "New Chat");
-      for (const emptyChat of emptyChats) {
-        try {
-          await deleteChatSession(emptyChat.id);
-        } catch (error) {
-          console.error("Error deleting empty chat:", error);
-        }
+      if (emptyChats.length > 0) {
+        // Delete in background without blocking UI
+        Promise.all(
+          emptyChats.map(emptyChat => 
+            deleteChatSession(emptyChat.id).catch(err => 
+              console.error("Error deleting empty chat:", err)
+            )
+          )
+        );
       }
     } catch (error) {
       console.error("Error loading chats:", error);
-    } finally {
       setLoading(false);
     }
   };

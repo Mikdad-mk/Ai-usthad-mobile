@@ -28,10 +28,11 @@ export default function ChatPage() {
   useEffect(() => {
     if (!authLoading && !user) {
       router.replace("/");
-    } else if (user) {
+    } else if (user && !chatId && messages.length === 0) {
+      // Only initialize once when user is loaded and chat is not initialized
       initializeChat();
     }
-  }, [user, authLoading, params]);
+  }, [user, authLoading]); // Remove params from dependencies to prevent infinite loop
 
   const initializeChat = async () => {
     if (!user) return;
@@ -71,6 +72,8 @@ export default function ChatPage() {
 
     const userMessageText = inputText.trim();
     setInputText("");
+    
+    // Show loading immediately
     setLoading(true);
 
     try {
@@ -86,7 +89,24 @@ export default function ChatPage() {
         setMessages((prev) => prev.filter((msg) => msg.id !== "welcome-temp"));
       }
 
-      // Save user message with unique ID
+      // Create temporary user message to show immediately
+      const tempUserMessage: ChatMessage = {
+        id: `temp_user_${Date.now()}`,
+        chat_id: currentChatId,
+        role: "user",
+        text: userMessageText,
+        created_at: new Date().toISOString(),
+      };
+      
+      // Show user message immediately
+      setMessages((prev) => [...prev, tempUserMessage]);
+      
+      // Scroll to bottom immediately
+      setTimeout(() => {
+        scrollViewRef.current?.scrollToEnd({ animated: true });
+      }, 50);
+
+      // Save user message in background
       const userMessageId = `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}_user`;
       const userMessage = await saveMessage({
         id: userMessageId,
@@ -95,11 +115,16 @@ export default function ChatPage() {
         text: userMessageText,
       });
 
-      setMessages((prev) => [...prev, userMessage]);
+      // Replace temp message with real one
+      setMessages((prev) => 
+        prev.map(msg => msg.id === tempUserMessage.id ? userMessage : msg)
+      );
 
-      // Update chat title with first message
+      // Update chat title with first message (in background)
       if (messages.length <= 1) {
-        await updateChatTitle(currentChatId, userMessageText);
+        updateChatTitle(currentChatId, userMessageText).catch(err => 
+          console.error("Error updating title:", err)
+        );
       }
 
       // Build conversation context
@@ -108,7 +133,7 @@ export default function ChatPage() {
       // Get AI response
       const aiResponse = await sendMessageToGemini(userMessageText, context);
 
-      // Save AI message with unique ID
+      // Save AI message
       const aiMessageId = `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}_ai`;
       const aiMessage = await saveMessage({
         id: aiMessageId,
@@ -119,8 +144,10 @@ export default function ChatPage() {
 
       setMessages((prev) => [...prev, aiMessage]);
 
-      // Update chat session timestamp
-      await updateChatSession(currentChatId);
+      // Update chat session timestamp (in background)
+      updateChatSession(currentChatId).catch(err => 
+        console.error("Error updating session:", err)
+      );
 
       // Scroll to bottom
       setTimeout(() => {
@@ -129,6 +156,9 @@ export default function ChatPage() {
     } catch (error: any) {
       console.error("Error sending message:", error);
       Alert.alert("Error", error.message || "Failed to send message");
+      
+      // Remove the temporary message on error
+      setMessages((prev) => prev.filter(msg => !msg.id.startsWith("temp_")));
     } finally {
       setLoading(false);
     }
