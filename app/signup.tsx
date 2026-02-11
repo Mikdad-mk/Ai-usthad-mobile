@@ -26,7 +26,7 @@ export default function SignupPage() {
     try {
       await signUpUser(email, password, name);
       Alert.alert("Success", "Account created successfully!", [
-        { text: "OK", onPress: () => router.replace("/chats") }
+        { text: "OK", onPress: () => router.replace("/chat?new=true") }
       ]);
     } catch (error: any) {
       Alert.alert("Signup Failed", error.message || "Could not create account");
@@ -39,7 +39,7 @@ export default function SignupPage() {
     setGoogleLoading(true);
     try {
       await signInWithGoogle();
-      router.replace("/chats");
+      router.replace("/chat?new=true");
     } catch (error: any) {
       Alert.alert("Google Sign-In Failed", error.message || "Could not sign in with Google");
     } finally {

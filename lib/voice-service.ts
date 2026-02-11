@@ -89,3 +89,13 @@ export const VOICE_LANGUAGES = {
   TAMIL: "ta-IN",
   URDU: "ur-PK",
 };
+
+// Language display names
+export const LANGUAGE_NAMES: Record<string, string> = {
+  "ml-IN": "Malayalam",
+  "en-US": "English",
+  "ar-SA": "Arabic",
+  "hi-IN": "Hindi",
+  "ta-IN": "Tamil",
+  "ur-PK": "Urdu",
+};

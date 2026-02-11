@@ -10,8 +10,8 @@ export default function LandingPage() {
 
   useEffect(() => {
     if (!loading && user) {
-      // If user is logged in, redirect to chats
-      router.replace("/chats");
+      // If user is logged in, redirect to chat
+      router.replace("/chat?new=true");
     }
   }, [user, loading]);
 

@@ -15,11 +15,14 @@ import {
 import { sendMessageToGemini } from "../lib/gemini-service";
 import { speakText, stopSpeaking, VOICE_LANGUAGES } from "../lib/voice-service";
 import { VoiceInputButton } from "../components/VoiceInputButton";
+import { Sidebar } from "../components/Sidebar";
+import { ProfileModal } from "../components/ProfileModal";
+import { useFonts, AnekMalayalam_400Regular, AnekMalayalam_600SemiBold, AnekMalayalam_700Bold } from "@expo-google-fonts/anek-malayalam";
 
 export default function ChatPage() {
   const router = useRouter();
   const params = useLocalSearchParams();
-  const { user, loading: authLoading } = useAuth();
+  const { user, profile, loading: authLoading } = useAuth();
   const scrollViewRef = useRef<ScrollView>(null);
 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -29,6 +32,15 @@ export default function ChatPage() {
   const [initializing, setInitializing] = useState(true);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [selectedLanguage, setSelectedLanguage] = useState(VOICE_LANGUAGES.MALAYALAM);
+  const [sidebarVisible, setSidebarVisible] = useState(false);
+  const [profileVisible, setProfileVisible] = useState(false);
+
+  // Load Anek Malayalam font
+  const [fontsLoaded] = useFonts({
+    AnekMalayalam_400Regular,
+    AnekMalayalam_600SemiBold,
+    AnekMalayalam_700Bold,
+  });
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -173,6 +185,10 @@ export default function ChatPage() {
     setInputText(transcript);
   };
 
+  const handleLanguageChange = (newLocale: string) => {
+    setSelectedLanguage(newLocale);
+  };
+
   const handleSpeakResponse = async (text: string) => {
     try {
       if (isSpeaking) {
@@ -189,7 +205,7 @@ export default function ChatPage() {
     }
   };
 
-  if (authLoading || initializing) {
+  if (authLoading || initializing || !fontsLoaded) {
     return (
       <View className="flex-1 bg-[#fbf9f6] items-center justify-center">
         <ActivityIndicator size="large" color="#d97706" />
@@ -203,12 +219,35 @@ export default function ChatPage() {
       className="flex-1 bg-[#fbf9f6]"
       keyboardVerticalOffset={0}
     >
+      {/* Sidebar */}
+      <Sidebar 
+        visible={sidebarVisible} 
+        onClose={() => setSidebarVisible(false)}
+        currentChatId={chatId || undefined}
+      />
+
+      {/* Profile Modal */}
+      <ProfileModal
+        visible={profileVisible}
+        onClose={() => setProfileVisible(false)}
+      />
+
       {/* Header */}
       <View className="bg-white border-b border-slate-100 pt-12 pb-4 px-6">
         <View className="flex-row items-center justify-between">
-          <TouchableOpacity onPress={() => router.back()} className="mr-3">
-            <Text className="text-slate-600 text-lg">←</Text>
+          {/* Menu Button */}
+          <TouchableOpacity 
+            onPress={() => setSidebarVisible(true)} 
+            className="mr-3 p-2"
+          >
+            <View className="gap-1">
+              <View className="w-6 h-0.5 bg-slate-700" />
+              <View className="w-6 h-0.5 bg-slate-700" />
+              <View className="w-6 h-0.5 bg-slate-700" />
+            </View>
           </TouchableOpacity>
+
+          {/* Logo and Title */}
           <View className="flex-row items-center gap-3 flex-1">
             <View className="w-10 h-10 rounded-full border border-amber-200 overflow-hidden">
               <Image
@@ -218,10 +257,24 @@ export default function ChatPage() {
               />
             </View>
             <View>
-              <Text className="text-lg font-bold text-amber-700">AI USTHAD</Text>
-              <Text className="text-xs text-slate-500">Islamic Scholar</Text>
+              <Text className="text-lg font-bold text-amber-700" style={{ fontFamily: "AnekMalayalam_700Bold" }}>
+                AI USTHAD
+              </Text>
+              <Text className="text-xs text-slate-500" style={{ fontFamily: "AnekMalayalam_400Regular" }}>
+                Islamic Scholar
+              </Text>
             </View>
           </View>
+
+          {/* Profile Button */}
+          <TouchableOpacity 
+            onPress={() => setProfileVisible(true)}
+            className="w-10 h-10 rounded-full bg-amber-100 items-center justify-center border border-amber-200"
+          >
+            <Text className="text-amber-700 font-bold" style={{ fontFamily: "AnekMalayalam_700Bold" }}>
+              {profile?.initials || profile?.name?.substring(0, 2).toUpperCase() || "AU"}
+            </Text>
+          </TouchableOpacity>
         </View>
       </View>
 
@@ -250,6 +303,7 @@ export default function ChatPage() {
                 className={`text-base leading-relaxed ${
                   message.role === "user" ? "text-white" : "text-slate-800"
                 }`}
+                style={{ fontFamily: "AnekMalayalam_400Regular" }}
               >
                 {message.text}
               </Text>
@@ -258,7 +312,7 @@ export default function ChatPage() {
                   onPress={() => handleSpeakResponse(message.text)}
                   className="mt-2 flex-row items-center"
                 >
-                  <Text className="text-amber-600 text-xs">
+                  <Text className="text-amber-600 text-xs" style={{ fontFamily: "AnekMalayalam_600SemiBold" }}>
                     {isSpeaking ? "🔊 Stop" : "🔊 Listen"}
                   </Text>
                 </TouchableOpacity>
@@ -284,6 +338,7 @@ export default function ChatPage() {
             isLoading={loading}
             locale={selectedLanguage}
             disabled={false}
+            onLanguageChange={handleLanguageChange}
           />
         </View>
 
@@ -296,6 +351,7 @@ export default function ChatPage() {
               placeholder="Ask your question..."
               placeholderTextColor="#94a3b8"
               className="text-slate-900 text-base"
+              style={{ fontFamily: "AnekMalayalam_400Regular" }}
               multiline
               maxLength={500}
               editable={!loading}
@@ -311,8 +367,8 @@ export default function ChatPage() {
           </TouchableOpacity>
         </View>
 
-        <Text className="text-xs text-slate-400 text-center mt-2">
-          🎤 {selectedLanguage === VOICE_LANGUAGES.MALAYALAM ? "Malayalam" : "English"} • Powered by Fathul Mueen
+        <Text className="text-xs text-slate-400 text-center mt-2" style={{ fontFamily: "AnekMalayalam_400Regular" }}>
+          Powered by Fathul Mueen • Ahlussunnah wal Jama'a
         </Text>
       </View>
     </KeyboardAvoidingView>

@@ -9,6 +9,7 @@
     "web": "expo start --web"
   },
   "dependencies": {
+    "@expo-google-fonts/anek-malayalam": "^0.4.1",
     "@google/generative-ai": "^0.17.1",
     "@react-native-async-storage/async-storage": "1.23.1",
     "@react-native-voice/voice": "^3.2.4",

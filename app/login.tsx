@@ -19,7 +19,7 @@ export default function LoginPage() {
     setLoading(true);
     try {
       await signInUser(email, password);
-      router.replace("/chats");
+      router.replace("/chat?new=true");
     } catch (error: any) {
       Alert.alert("Login Failed", error.message || "Invalid credentials");
     } finally {
@@ -31,7 +31,7 @@ export default function LoginPage() {
     setGoogleLoading(true);
     try {
       await signInWithGoogle();
-      router.replace("/chats");
+      router.replace("/chat?new=true");
     } catch (error: any) {
       Alert.alert("Google Sign-In Failed", error.message || "Could not sign in with Google");
     } finally {
