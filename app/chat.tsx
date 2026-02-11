@@ -2,6 +2,7 @@ import { View, Text, TextInput, TouchableOpacity, ScrollView, KeyboardAvoidingVi
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useState, useEffect, useRef } from "react";
 import { useAuth } from "../contexts/AuthContext";
+import * as Speech from "expo-speech";
 import {
   ChatMessage,
   createChatSession,
@@ -12,6 +13,8 @@ import {
   buildConversationContext,
 } from "../lib/chat-service";
 import { sendMessageToGemini } from "../lib/gemini-service";
+import { speakText, stopSpeaking, VOICE_LANGUAGES } from "../lib/voice-service";
+import { VoiceInputButton } from "../components/VoiceInputButton";
 
 export default function ChatPage() {
   const router = useRouter();
@@ -24,6 +27,8 @@ export default function ChatPage() {
   const [loading, setLoading] = useState(false);
   const [chatId, setChatId] = useState<string | null>(null);
   const [initializing, setInitializing] = useState(true);
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [selectedLanguage, setSelectedLanguage] = useState(VOICE_LANGUAGES.MALAYALAM);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -164,6 +169,26 @@ export default function ChatPage() {
     }
   };
 
+  const handleVoiceTranscript = (transcript: string) => {
+    setInputText(transcript);
+  };
+
+  const handleSpeakResponse = async (text: string) => {
+    try {
+      if (isSpeaking) {
+        stopSpeaking();
+        setIsSpeaking(false);
+      } else {
+        setIsSpeaking(true);
+        await speakText(text, selectedLanguage);
+        setIsSpeaking(false);
+      }
+    } catch (error) {
+      setIsSpeaking(false);
+      Alert.alert("Error", "Could not speak the text");
+    }
+  };
+
   if (authLoading || initializing) {
     return (
       <View className="flex-1 bg-[#fbf9f6] items-center justify-center">
@@ -228,6 +253,16 @@ export default function ChatPage() {
               >
                 {message.text}
               </Text>
+              {message.role === "model" && (
+                <TouchableOpacity
+                  onPress={() => handleSpeakResponse(message.text)}
+                  className="mt-2 flex-row items-center"
+                >
+                  <Text className="text-amber-600 text-xs">
+                    {isSpeaking ? "🔊 Stop" : "🔊 Listen"}
+                  </Text>
+                </TouchableOpacity>
+              )}
             </View>
           </View>
         ))}
@@ -242,6 +277,17 @@ export default function ChatPage() {
 
       {/* Input Area */}
       <View className="bg-white border-t border-slate-100 px-4 py-4">
+        {/* Voice Input Button - Centered above input */}
+        <View className="items-center mb-3">
+          <VoiceInputButton
+            onTranscript={handleVoiceTranscript}
+            isLoading={loading}
+            locale={selectedLanguage}
+            disabled={false}
+          />
+        </View>
+
+        {/* Text Input and Send Button */}
         <View className="flex-row items-center gap-3">
           <View className="flex-1 bg-slate-50 rounded-full px-5 py-3 border border-slate-200">
             <TextInput
@@ -264,8 +310,9 @@ export default function ChatPage() {
             <Text className="text-white text-xl">↑</Text>
           </TouchableOpacity>
         </View>
+
         <Text className="text-xs text-slate-400 text-center mt-2">
-          Powered by Fathul Mueen • Ahlussunnah wal Jama'a
+          🎤 {selectedLanguage === VOICE_LANGUAGES.MALAYALAM ? "Malayalam" : "English"} • Powered by Fathul Mueen
         </Text>
       </View>
     </KeyboardAvoidingView>

@@ -11,6 +11,7 @@
   "dependencies": {
     "@google/generative-ai": "^0.17.1",
     "@react-native-async-storage/async-storage": "1.23.1",
+    "@react-native-voice/voice": "^3.2.4",
     "@supabase/supabase-js": "^2.39.0",
     "expo": "~52.0.0",
     "expo-asset": "~11.0.5",
@@ -21,6 +22,7 @@
     "expo-linear-gradient": "~14.0.1",
     "expo-linking": "~7.0.5",
     "expo-router": "~4.0.0",
+    "expo-speech": "~13.0.1",
     "expo-splash-screen": "~0.29.24",
     "expo-status-bar": "~2.0.0",
     "expo-web-browser": "~14.0.2",
