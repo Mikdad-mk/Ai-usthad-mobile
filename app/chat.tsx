@@ -45,21 +45,26 @@ export default function ChatPage() {
   useEffect(() => {
     if (!authLoading && !user) {
       router.replace("/");
-    } else if (user && !chatId && messages.length === 0) {
-      // Only initialize once when user is loaded and chat is not initialized
+    }
+  }, [user, authLoading]);
+
+  // Separate effect for initializing chat based on params
+  useEffect(() => {
+    if (user && !authLoading) {
       initializeChat();
     }
-  }, [user, authLoading]); // Remove params from dependencies to prevent infinite loop
+  }, [params.id, params.new, user, authLoading]);
 
   const initializeChat = async () => {
     if (!user) return;
 
+    setInitializing(true);
     try {
       const isNewChat = params.new === "true";
       const existingChatId = params.id as string;
 
       if (isNewChat || !existingChatId) {
-        // Don't create chat session yet - wait for first message
+        // New chat - don't create session yet, wait for first message
         setChatId(null);
         setMessages([
           {
@@ -78,7 +83,7 @@ export default function ChatPage() {
       }
     } catch (error) {
       console.error("Error initializing chat:", error);
-      Alert.alert("Error", "Failed to initialize chat");
+      Alert.alert("Error", "Failed to load chat");
     } finally {
       setInitializing(false);
     }

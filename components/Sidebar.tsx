@@ -45,12 +45,12 @@ export function Sidebar({ visible, onClose, currentChatId }: SidebarProps) {
 
   const handleNewChat = () => {
     onClose();
-    router.push("/chat?new=true");
+    router.replace("/chat?new=true");
   };
 
   const handleChatSelect = (chatId: string) => {
     onClose();
-    router.push(`/chat?id=${chatId}`);
+    router.replace(`/chat?id=${chatId}`);
   };
 
   const handleDeleteChat = async (chatId: string, e: any) => {
