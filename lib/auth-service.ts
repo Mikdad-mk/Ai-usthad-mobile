@@ -230,7 +230,8 @@ export async function getUserProfile(
 
 export async function signInWithGoogle() {
   try {
-    const redirectUrl = Linking.createURL("/");
+    // Use the app's deep link scheme for mobile
+    const redirectUrl = Linking.createURL("auth/callback");
     
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: "google",
