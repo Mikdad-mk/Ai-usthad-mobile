@@ -6,6 +6,8 @@ export default {
     orientation: "portrait",
     userInterfaceStyle: "automatic",
     splash: {
+      image: "./assets/splash.png",
+      resizeMode: "contain",
       backgroundColor: "#fbf9f6",
     },
     assetBundlePatterns: ["**/*"],
@@ -19,10 +21,7 @@ export default {
     },
     android: {
       package: "com.aiustad.mobile",
-      permissions: [
-        "RECORD_AUDIO",
-        "INTERNET"
-      ]
+      permissions: ["RECORD_AUDIO", "INTERNET"]
     },
     plugins: ["expo-router"],
     scheme: "aiustad",
